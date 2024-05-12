@@ -5,8 +5,6 @@ UBattleComponent::UBattleComponent()
 {
     PrimaryComponentTick.bCanEverTick = false;
     bIsAiming = false;
-
-    // 네트워크 복제 활성화
     SetIsReplicatedByDefault(true);
 
 }
