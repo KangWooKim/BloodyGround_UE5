@@ -47,7 +47,7 @@ AttackButtonPressed() 및 AttackButtonReleased()
 AimButtonPressed() 및 AimButtonReleased()
 조준 버튼이 눌렸을 때와 떼졌을 때의 동작을 처리합니다. 조준 시작과 종료를 BattleComponent를 통해 처리합니다.
 
-#BaseCharacterAnimInstance
+# BaseCharacterAnimInstance
 
 NativeUpdateAnimation(float DeltaSeconds)
 이 메서드는 애니메이션 인스턴스의 주요 업데이트 사이클에서 호출되어, 캐릭터의 동작과 상태에 따라 애니메이션 변수들을 실시간으로 갱신합니다. 캐릭터의 속도와 방향성을 기반으로 전방 및 좌우 이동 속도를 계산하고, 이 데이터를 애니메이션 블루프린트의 변수로 전달합니다. 또한 캐릭터의 점프 상태(공중에 있는지 여부)와 조준 상태를 갱신하고, 현재 들고 있는 무기의 종류와 해당 무기 메쉬의 소켓 위치를 애니메이션 블루프린트로 전달하여 캐릭터의 손 위치 등을 정밀하게 조정할 수 있도록 합니다. 이 메서드는 캐릭터의 움직임과 애니메이션 사이의 일관성을 유지하는 데 중요한 역할을 합니다.
