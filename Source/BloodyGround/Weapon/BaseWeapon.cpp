@@ -8,6 +8,7 @@
 #include "BloodyGround/PlayerController/BloodyGroundPlayerController.h"
 #include "BloodyGround/Enemy/EliteZombie.h"
 #include "BloodyGround/Component/ServerLocationComponent.h"
+#include "BloodyGround/HUD/InGameHUD.h"
 
 // 생성자
 ABaseWeapon::ABaseWeapon()
@@ -223,6 +224,35 @@ void ABaseWeapon::PerformReload()
 
         // 소음 발생
         WeaponNoise(0.3f);  // 재장전 소음 크기 조정
+
+        // 탄약 갱신 로직 추가
+        if (IsA<APistol>())
+        {
+            int32 AmmoToReload = FMath::Min(Capacity - CurrentAmmo, Character->InventoryComp->GetPistolAmmo());
+            CurrentAmmo += AmmoToReload;
+            Character->InventoryComp->SetPistolAmmo(Character->InventoryComp->GetPistolAmmo() - AmmoToReload);
+        }
+        else if (IsA<AMachineGun>())
+        {
+            int32 AmmoToReload = FMath::Min(Capacity - CurrentAmmo, Character->InventoryComp->GetMachineGunAmmo());
+            CurrentAmmo += AmmoToReload;
+            Character->InventoryComp->SetMachineGunAmmo(Character->InventoryComp->GetMachineGunAmmo() - AmmoToReload);
+        }
+
+        // HUD 업데이트
+        if (Character->GetInGameHUD())
+        {
+            if (IsA<APistol>())
+            {
+                Character->GetInGameHUD()->UpdateAmmo(CurrentAmmo, Character->InventoryComp->GetPistolAmmo());
+            }
+            else if (IsA<AMachineGun>())
+            {
+                Character->GetInGameHUD()->UpdateAmmo(CurrentAmmo, Character->InventoryComp->GetMachineGunAmmo());
+            }
+        }
+
+        WeaponState = EWeaponState::None;
     }
 }
 

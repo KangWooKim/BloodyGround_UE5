@@ -1,5 +1,3 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 #pragma once
 
 #include "CoreMinimal.h"
@@ -23,13 +21,10 @@ public:
         TSubclassOf<class UUserWidget> InGameWidgetClass;
 
     // 캐릭터의 체력을 업데이트하는 함수
-    // @param HealthPercentage 캐릭터의 현재 체력을 백분율로 나타낸 값
     UFUNCTION()
         void UpdateHealth(float HealthPercentage);
 
     // 캐릭터의 탄약 정보를 업데이트하는 함수
-    // @param AmmoInMagazine 현재 탄창에 남은 탄약 수
-    // @param TotalAmmo 전체 남은 탄약 수
     UFUNCTION()
         void UpdateAmmo(int32 AmmoInMagazine, int32 TotalAmmo);
 
@@ -40,6 +35,10 @@ public:
     // 화면에서 리스폰 텍스트를 제거하는 함수
     UFUNCTION()
         void DeleteRespawnText();
+
+    // 승자 텍스트를 설정하는 함수
+    UFUNCTION()
+        void SetWinnerText(const FString& WinnerName);
 
 protected:
 

@@ -1,34 +1,53 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 #include "InGameHUD.h"
 #include "BloodyGround/HUD/InGameWidget.h"
 
 // 캐릭터의 체력 업데이트 함수
 void AInGameHUD::UpdateHealth(float HealthPercentage)
 {
-    // InGameWidget의 체력 바 업데이트 함수 호출
-    InGameWidget->UpdateHealthBar(HealthPercentage);
+    if (InGameWidget)
+    {
+        // InGameWidget의 체력 바 업데이트 함수 호출
+        InGameWidget->UpdateHealthBar(HealthPercentage);
+    }
 }
 
 // 캐릭터의 탄약 정보 업데이트 함수
 void AInGameHUD::UpdateAmmo(int32 AmmoInMagazine, int32 TotalAmmo)
 {
     // InGameWidget의 탄약 카운트 업데이트 함수 호출
-    InGameWidget->UpdateAmmoCount(AmmoInMagazine, TotalAmmo);
+    if (InGameWidget)
+    {
+        InGameWidget->UpdateAmmoCount(AmmoInMagazine, TotalAmmo);
+    }
 }
 
 // 리스폰 텍스트 설정 함수
 void AInGameHUD::SetRespawnText()
 {
+    if (InGameWidget)
+    {
+        InGameWidget->SetRespawnText();
+    }
     // InGameWidget의 리스폰 텍스트 설정 함수 호출
-    InGameWidget->SetRespawnText();
 }
 
 // 리스폰 텍스트 삭제 함수
 void AInGameHUD::DeleteRespawnText()
 {
+    if (InGameWidget)
+    {
+        InGameWidget->DeleteRespawnText();
+    }
     // InGameWidget의 리스폰 텍스트 삭제 함수 호출
-    InGameWidget->DeleteRespawnText();
+}
+
+// 승자 텍스트 설정 함수
+void AInGameHUD::SetWinnerText(const FString& WinnerName)
+{
+    if (InGameWidget)
+    {
+        InGameWidget->SetWinnerText(WinnerName);
+    }
 }
 
 // HUD 초기화 함수

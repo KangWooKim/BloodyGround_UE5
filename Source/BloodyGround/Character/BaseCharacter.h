@@ -31,6 +31,9 @@ public:
     // 캐릭터의 체력을 반환하는 함수
     FORCEINLINE float GetHealth() { return Health; }
 
+    // 캐릭터의 초기 탄약 설정 함수
+    void InitializeWeaponsAndAmmo();
+
 protected:
     // 게임이 시작될 때 호출되는 함수
     virtual void BeginPlay() override;
@@ -39,10 +42,6 @@ protected:
     virtual void GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& OutLifetimeProps) const override;
 
     // 데미지를 처리하는 함수
-    // @param DamageAmount 데미지 양
-    // @param DamageEvent 데미지 이벤트
-    // @param EventInstigator 데미지를 입힌 컨트롤러
-    // @param DamageCauser 데미지를 입힌 액터
     virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
 
     // 캐릭터가 사망했을 때 처리하는 함수
@@ -190,4 +189,10 @@ private:
 
     // FOV 변경 속도
     float FOVInterpSpeed;
+
+    // 초기 권총 탄약 수
+    int32 InitialPistolAmmo = 50;
+
+    // 초기 머신건 탄약 수
+    int32 InitialMachineGunAmmo = 300;
 };

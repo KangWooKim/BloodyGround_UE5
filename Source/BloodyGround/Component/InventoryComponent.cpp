@@ -50,8 +50,13 @@ void UInventoryComponent::DestroyAllWeapons()
     // 모든 무기를 순회하며 파괴
     for (int32 index = 0; index < Weapons.Num(); index++)
     {
-        Weapons[index]->Destroy();
+        if (Weapons[index])
+        {
+            Weapons[index]->Destroy();
+        }
     }
+    Weapons.Empty();
+    CurrentWeapon = nullptr;
 }
 
 // 현재 무기를 다음 무기로 변경
@@ -81,7 +86,10 @@ void UInventoryComponent::ChangeWeapon()
     // 새 무기 보이기
     CurrentWeapon = NewWeapon;
     CurrentWeapon->SetActorHiddenInGame(false);
-    CurrentWeapon->ChangeWeapon();
+    if (CurrentWeapon)
+    {
+        CurrentWeapon->ChangeWeapon();
+    }
 }
 
 // 현재 무기를 반환

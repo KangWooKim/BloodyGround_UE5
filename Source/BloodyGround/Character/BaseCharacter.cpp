@@ -44,6 +44,8 @@ ABaseCharacter::ABaseCharacter()
 
     // 소음 발생 컴포넌트 초기화
     NoiseEmitter = CreateDefaultSubobject<UPawnNoiseEmitterComponent>(TEXT("Noise Emitter"));
+
+    PlayerController = Cast<APlayerController>(GetController());
 }
 
 // 게임 시작 시 초기화
@@ -59,49 +61,21 @@ void ABaseCharacter::BeginPlay()
     if (PlayerController)
     {
         PlayerHUD = Cast<AInGameHUD>(PlayerController->GetHUD());
+        UE_LOG(LogTemp, Warning, TEXT("1"));
     }
 
     if (PlayerHUD)
     {
         PlayerHUD->UpdateHealth(1.f); // HUD에 초기 체력 업데이트
         PlayerHUD->DeleteRespawnText(); // Respawn 텍스트 삭제
+        UE_LOG(LogTemp, Warning, TEXT("2"));
     }
 
     // 기본 무기 및 탄알 설정
     if (HasAuthority())
     {
-        // 권총 생성 및 설정
-        FActorSpawnParameters SpawnParams;
-        SpawnParams.Owner = this;
-        SpawnParams.Instigator = GetInstigator();
-
-        APistol* NewPistol = GetWorld()->SpawnActor<APistol>(PistolBlueprint, this->GetActorLocation(), this->GetActorRotation(), SpawnParams);
-        if (NewPistol)
-        {
-            InventoryComp->AddWeapon(NewPistol);
-            InventoryComp->SetInitWeapon(NewPistol);
-            NewPistol->SetActorHiddenInGame(false);
-
-            // 무기를 캐릭터의 소켓에 부착
-            const FName WeaponSocketName(TEXT("WeaponSocket_Pistol"));
-            NewPistol->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, WeaponSocketName);
-        }
-
-        // 머신건 생성 및 설정
-        AMachineGun* NewMachineGun = GetWorld()->SpawnActor<AMachineGun>(MachineGunBlueprint, this->GetActorLocation(), this->GetActorRotation(), SpawnParams);
-        if (NewMachineGun)
-        {
-            InventoryComp->AddWeapon(NewMachineGun);
-            NewMachineGun->SetActorHiddenInGame(true);
-
-            // 무기를 캐릭터의 소켓에 부착
-            const FName WeaponSocketName(TEXT("WeaponSocket_Rifle"));
-            NewMachineGun->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, WeaponSocketName);
-        }
-
-        // 탄알 설정
-        InventoryComp->SetPistolAmmo(50);
-        InventoryComp->SetMachineGunAmmo(300);
+        InitializeWeaponsAndAmmo();
+        UE_LOG(LogTemp, Warning, TEXT("3"));
     }
 
     // 카메라 기본 FOV 설정
@@ -111,10 +85,60 @@ void ABaseCharacter::BeginPlay()
     }
 }
 
+void ABaseCharacter::InitializeWeaponsAndAmmo()
+{
+    // 권총 생성 및 설정
+    FActorSpawnParameters SpawnParams;
+    SpawnParams.Owner = this;
+    SpawnParams.Instigator = GetInstigator();
+
+    APistol* NewPistol = GetWorld()->SpawnActor<APistol>(PistolBlueprint, this->GetActorLocation(), this->GetActorRotation(), SpawnParams);
+    if (NewPistol)
+    {
+        InventoryComp->AddWeapon(NewPistol);
+        InventoryComp->SetInitWeapon(NewPistol);
+        NewPistol->SetActorHiddenInGame(false);
+
+        // 무기를 캐릭터의 소켓에 부착
+        const FName WeaponSocketName(TEXT("WeaponSocket_Pistol"));
+        NewPistol->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, WeaponSocketName);
+    }
+
+    // 머신건 생성 및 설정
+    AMachineGun* NewMachineGun = GetWorld()->SpawnActor<AMachineGun>(MachineGunBlueprint, this->GetActorLocation(), this->GetActorRotation(), SpawnParams);
+    if (NewMachineGun)
+    {
+        InventoryComp->AddWeapon(NewMachineGun);
+        NewMachineGun->SetActorHiddenInGame(true);
+
+        // 무기를 캐릭터의 소켓에 부착
+        const FName WeaponSocketName(TEXT("WeaponSocket_Rifle"));
+        NewMachineGun->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, WeaponSocketName);
+    }
+
+    // 탄알 설정
+    InventoryComp->SetPistolAmmo(InitialPistolAmmo);
+    InventoryComp->SetMachineGunAmmo(InitialMachineGunAmmo);
+
+    // HUD 업데이트
+    if (PlayerHUD)
+    {
+        PlayerHUD->UpdateAmmo(NewPistol->CurrentAmmo, InitialPistolAmmo);
+        PlayerHUD->UpdateHealth(1.f); // HUD에 초기 체력 업데이트
+        PlayerHUD->DeleteRespawnText(); // Respawn 텍스트 삭제
+    }
+}
+
 // 매 프레임마다 호출
 void ABaseCharacter::Tick(float DeltaTime)
 {
     Super::Tick(DeltaTime);
+
+    PlayerController = PlayerController == nullptr ? Cast<APlayerController>(GetController()) : PlayerController;
+    if (PlayerController)
+    {
+        PlayerHUD = PlayerHUD == nullptr ? Cast<AInGameHUD>(PlayerController->GetHUD()) : PlayerHUD;
+    }
 
     // 조준 상태에 따른 캐릭터 회전 처리
     HandleAimingRotation();
@@ -188,6 +212,9 @@ void ABaseCharacter::HandleDeath()
     // 모든 입력 비활성화
     DisableInput(Cast<APlayerController>(GetController()));
 
+    // 인벤토리의 모든 무기 제거
+    InventoryComp->DestroyAllWeapons();
+
     // 사망 처리 후 5초 뒤에 Respawn 함수 호출
     FTimerHandle RespawnTimerHandle;
     GetWorld()->GetTimerManager().SetTimer(RespawnTimerHandle, this, &ABaseCharacter::Respawn, 5.0f, false);
@@ -202,7 +229,6 @@ void ABaseCharacter::Respawn()
         GM->RespawnPlayer(Cast<APlayerController>(GetController()));
     }
 
-    InventoryComp->DestroyAllWeapons();
     // 사망한 캐릭터 제거
     Destroy();
 }
@@ -230,7 +256,24 @@ void ABaseCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 // 재장전 처리 함수
 void ABaseCharacter::Reload()
 {
-    InventoryComp->GetCurrentWeapon()->Reload();
+    if (InventoryComp && InventoryComp->GetCurrentWeapon())
+    {
+        InventoryComp->GetCurrentWeapon()->Reload();
+
+        // HUD 업데이트
+        if (PlayerHUD)
+        {
+            ABaseWeapon* CurrentWeapon = InventoryComp->GetCurrentWeapon();
+            if (CurrentWeapon->IsA<APistol>())
+            {
+                PlayerHUD->UpdateAmmo(CurrentWeapon->CurrentAmmo, InventoryComp->GetPistolAmmo());
+            }
+            else if (CurrentWeapon->IsA<AMachineGun>())
+            {
+                PlayerHUD->UpdateAmmo(CurrentWeapon->CurrentAmmo, InventoryComp->GetMachineGunAmmo());
+            }
+        }
+    }
 }
 
 // 무기 변경 처리 함수
@@ -238,7 +281,10 @@ void ABaseCharacter::ChangeWeapon()
 {
     if (HasAuthority())
     {
-        InventoryComp->ChangeWeapon();
+        if (InventoryComp && InventoryComp->GetCurrentWeapon())
+        {
+            InventoryComp->ChangeWeapon();
+        }
     }
     else
     {
@@ -330,6 +376,20 @@ void ABaseCharacter::AttackButtonPressed()
     if (InventoryComp && InventoryComp->GetCurrentWeapon())
     {
         InventoryComp->GetCurrentWeapon()->Fire();
+
+        // HUD 업데이트
+        if (PlayerHUD)
+        {
+            ABaseWeapon* CurrentWeapon = InventoryComp->GetCurrentWeapon();
+            if (CurrentWeapon->IsA<APistol>())
+            {
+                PlayerHUD->UpdateAmmo(CurrentWeapon->CurrentAmmo, InventoryComp->GetPistolAmmo());
+            }
+            else if (CurrentWeapon->IsA<AMachineGun>())
+            {
+                PlayerHUD->UpdateAmmo(CurrentWeapon->CurrentAmmo, InventoryComp->GetMachineGunAmmo());
+            }
+        }
     }
 }
 
