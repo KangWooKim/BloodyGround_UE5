@@ -1,31 +1,41 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
-
 #include "MultiplayerSessionsSubsystem.h"
 #include "OnlineSubsystem.h"
 #include "OnlineSessionSettings.h"
 
-UMultiplayerSessionsSubsystem::UMultiplayerSessionsSubsystem():
+// UMultiplayerSessionsSubsystem 클래스의 생성자입니다.
+// 다양한 세션 관련 델리게이트를 초기화하고 Online Subsystem을 설정합니다.
+UMultiplayerSessionsSubsystem::UMultiplayerSessionsSubsystem() :
 	CreateSessionCompleteDelegate(FOnCreateSessionCompleteDelegate::CreateUObject(this, &ThisClass::OnCreateSessionComplete)),
 	FindSessionsCompleteDelegate(FOnFindSessionsCompleteDelegate::CreateUObject(this, &ThisClass::OnFindSessionsComplete)),
 	JoinSessionCompleteDelegate(FOnJoinSessionCompleteDelegate::CreateUObject(this, &ThisClass::OnJoinSessionComplete)),
 	DestroySessionCompleteDelegate(FOnDestroySessionCompleteDelegate::CreateUObject(this, &ThisClass::OnDestroySessionComplete)),
 	StartSessionCompleteDelegate(FOnStartSessionCompleteDelegate::CreateUObject(this, &ThisClass::OnStartSessionComplete))
 {
+	// Online Subsystem을 가져옵니다.
 	IOnlineSubsystem* Subsystem = IOnlineSubsystem::Get();
 	if (Subsystem)
 	{
+		// 세션 인터페이스를 가져옵니다.
 		SessionInterface = Subsystem->GetSessionInterface();
 	}
 }
 
+// 세션을 생성하는 함수입니다.
+// @param NumPublicConnections 공개 연결의 수
+// @param MatchType 매치 타입
+// @param RoomName 방 이름
+// @param RoomPassword 방 비밀번호
 void UMultiplayerSessionsSubsystem::CreateSession(int32 NumPublicConnections, FString MatchType, FString RoomName, FString RoomPassword)
 {
+	// 세션 인터페이스가 유효한지 확인합니다.
 	if (!SessionInterface.IsValid())
 	{
 		return;
 	}
 
+	// 기존 세션이 있는지 확인합니다.
 	auto ExistingSession = SessionInterface->GetNamedSession(NAME_GameSession);
 	if (ExistingSession != nullptr)
 	{
@@ -33,12 +43,14 @@ void UMultiplayerSessionsSubsystem::CreateSession(int32 NumPublicConnections, FS
 		LastNumPublicConnections = NumPublicConnections;
 		LastMatchType = MatchType;
 
+		// 기존 세션을 파괴합니다.
 		DestroySession();
 	}
 
-	// Store the delegate in a FDelegateHandle so we can later remove it from the delegate list
+	// 델리게이트를 추가합니다.
 	CreateSessionCompleteDelegateHandle = SessionInterface->AddOnCreateSessionCompleteDelegate_Handle(CreateSessionCompleteDelegate);
 
+	// 세션 설정을 초기화합니다.
 	LastSessionSettings = MakeShareable(new FOnlineSessionSettings());
 	LastSessionSettings->bIsLANMatch = IOnlineSubsystem::Get()->GetSubsystemName() == "NULL" ? true : false;
 	LastSessionSettings->NumPublicConnections = NumPublicConnections;
@@ -55,16 +67,19 @@ void UMultiplayerSessionsSubsystem::CreateSession(int32 NumPublicConnections, FS
 	LastRoomPassword = RoomPassword;
 
 	const ULocalPlayer* LocalPlayer = GetWorld()->GetFirstLocalPlayerFromController();
+	// 세션을 생성합니다.
 	if (!SessionInterface->CreateSession(*LocalPlayer->GetPreferredUniqueNetId(), NAME_GameSession, *LastSessionSettings))
 	{
+		// 델리게이트를 제거합니다.
 		SessionInterface->ClearOnCreateSessionCompleteDelegate_Handle(CreateSessionCompleteDelegateHandle);
 
-		// Broadcast our own custom delegate
+		// 세션 생성 실패를 알립니다.
 		MultiplayerOnCreateSessionComplete.Broadcast(false);
 	}
 }
 
-
+// 세션에 참가하는 함수입니다.
+// @param SessionResult 세션 검색 결과
 void UMultiplayerSessionsSubsystem::JoinSession(const FOnlineSessionSearchResult& SessionResult)
 {
 	if (!SessionInterface.IsValid())
@@ -76,6 +91,7 @@ void UMultiplayerSessionsSubsystem::JoinSession(const FOnlineSessionSearchResult
 	JoinSessionCompleteDelegateHandle = SessionInterface->AddOnJoinSessionCompleteDelegate_Handle(JoinSessionCompleteDelegate);
 
 	const ULocalPlayer* LocalPlayer = GetWorld()->GetFirstLocalPlayerFromController();
+	// 세션에 참가합니다.
 	if (!SessionInterface->JoinSession(*LocalPlayer->GetPreferredUniqueNetId(), NAME_GameSession, SessionResult))
 	{
 		SessionInterface->ClearOnJoinSessionCompleteDelegate_Handle(JoinSessionCompleteDelegateHandle);
@@ -84,6 +100,9 @@ void UMultiplayerSessionsSubsystem::JoinSession(const FOnlineSessionSearchResult
 	}
 }
 
+// 세션을 찾는 함수입니다.
+// @param RoomName 방 이름
+// @param RoomPassword 방 비밀번호
 void UMultiplayerSessionsSubsystem::FindSessions(FString RoomName, FString RoomPassword)
 {
 	IOnlineSubsystem* OnlineSubsystem = IOnlineSubsystem::Get();
@@ -105,11 +124,13 @@ void UMultiplayerSessionsSubsystem::FindSessions(FString RoomName, FString RoomP
 				FOnFindSessionsCompleteDelegate::CreateUObject(this, &UMultiplayerSessionsSubsystem::OnFindSessionsComplete)
 			);
 
+			// 세션을 찾습니다.
 			Sessions->FindSessions(*GetWorld()->GetFirstLocalPlayerFromController()->GetPreferredUniqueNetId(), SessionSearch.ToSharedRef());
 		}
 	}
 }
 
+// 세션을 파괴하는 함수입니다.
 void UMultiplayerSessionsSubsystem::DestroySession()
 {
 	if (!SessionInterface.IsValid())
@@ -120,6 +141,7 @@ void UMultiplayerSessionsSubsystem::DestroySession()
 
 	DestroySessionCompleteDelegateHandle = SessionInterface->AddOnDestroySessionCompleteDelegate_Handle(DestroySessionCompleteDelegate);
 
+	// 세션을 파괴합니다.
 	if (!SessionInterface->DestroySession(NAME_GameSession))
 	{
 		SessionInterface->ClearOnDestroySessionCompleteDelegate_Handle(DestroySessionCompleteDelegateHandle);
@@ -127,10 +149,15 @@ void UMultiplayerSessionsSubsystem::DestroySession()
 	}
 }
 
+// 세션을 시작하는 함수입니다.
 void UMultiplayerSessionsSubsystem::StartSession()
 {
+	// 현재 구현은 비어있습니다.
 }
 
+// 세션 생성이 완료되었을 때 호출되는 콜백 함수입니다.
+// @param SessionName 세션 이름
+// @param bWasSuccessful 세션 생성 성공 여부
 void UMultiplayerSessionsSubsystem::OnCreateSessionComplete(FName SessionName, bool bWasSuccessful)
 {
 	if (SessionInterface)
@@ -138,9 +165,12 @@ void UMultiplayerSessionsSubsystem::OnCreateSessionComplete(FName SessionName, b
 		SessionInterface->ClearOnCreateSessionCompleteDelegate_Handle(CreateSessionCompleteDelegateHandle);
 	}
 
+	// 세션 생성 완료를 브로드캐스트합니다.
 	MultiplayerOnCreateSessionComplete.Broadcast(bWasSuccessful);
 }
 
+// 세션 검색이 완료되었을 때 호출되는 콜백 함수입니다.
+// @param bWasSuccessful 세션 검색 성공 여부
 void UMultiplayerSessionsSubsystem::OnFindSessionsComplete(bool bWasSuccessful)
 {
 	if (SessionInterface)
@@ -148,16 +178,20 @@ void UMultiplayerSessionsSubsystem::OnFindSessionsComplete(bool bWasSuccessful)
 		SessionInterface->ClearOnFindSessionsCompleteDelegate_Handle(FindSessionsCompleteDelegateHandle);
 	}
 
+	// 검색 결과가 없거나 세션이 없을 경우
 	if (!SessionSearch.IsValid() || SessionSearch->SearchResults.Num() <= 0)
 	{
 		MultiplayerOnFindSessionsComplete.Broadcast(TArray<FOnlineSessionSearchResult>(), false);
 		return;
 	}
 
+	// 세션 검색 완료를 브로드캐스트합니다.
 	MultiplayerOnFindSessionsComplete.Broadcast(SessionSearch->SearchResults, bWasSuccessful);
 }
 
-
+// 세션 참가가 완료되었을 때 호출되는 콜백 함수입니다.
+// @param SessionName 세션 이름
+// @param Result 세션 참가 결과 타입
 void UMultiplayerSessionsSubsystem::OnJoinSessionComplete(FName SessionName, EOnJoinSessionCompleteResult::Type Result)
 {
 	if (GEngine)
@@ -174,9 +208,13 @@ void UMultiplayerSessionsSubsystem::OnJoinSessionComplete(FName SessionName, EOn
 		SessionInterface->ClearOnJoinSessionCompleteDelegate_Handle(JoinSessionCompleteDelegateHandle);
 	}
 
+	// 세션 참가 완료를 브로드캐스트합니다.
 	MultiplayerOnJoinSessionComplete.Broadcast(Result);
 }
 
+// 세션 파괴가 완료되었을 때 호출되는 콜백 함수입니다.
+// @param SessionName 세션 이름
+// @param bWasSuccessful 세션 파괴 성공 여부
 void UMultiplayerSessionsSubsystem::OnDestroySessionComplete(FName SessionName, bool bWasSuccessful)
 {
 	if (SessionInterface)
@@ -188,9 +226,14 @@ void UMultiplayerSessionsSubsystem::OnDestroySessionComplete(FName SessionName, 
 		bCreateSessionOnDestroy = false;
 		CreateSession(LastNumPublicConnections, LastMatchType, LastRoomName, LastRoomPassword);
 	}
+	// 세션 파괴 완료를 브로드캐스트합니다.
 	MultiplayerOnDestroySessionComplete.Broadcast(bWasSuccessful);
 }
 
+// 세션 시작이 완료되었을 때 호출되는 콜백 함수입니다.
+// @param SessionName 세션 이름
+// @param bWasSuccessful 세션 시작 성공 여부
 void UMultiplayerSessionsSubsystem::OnStartSessionComplete(FName SessionName, bool bWasSuccessful)
 {
+	// 현재 구현은 비어있습니다.
 }
