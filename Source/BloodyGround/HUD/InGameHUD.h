@@ -9,37 +9,46 @@
 class UInGameWidget;
 
 /**
- * 
+ * AInGameHUD 클래스는 게임 중 UI를 관리하는 HUD 클래스입니다.
  */
 UCLASS()
 class BLOODYGROUND_API AInGameHUD : public AHUD
 {
-	GENERATED_BODY()
+    GENERATED_BODY()
 
 public:
 
-	UPROPERTY(EditAnywhere)
-	TSubclassOf<class UUserWidget> InGameWidgetClass;
+    // 게임 위젯 클래스 참조를 위한 변수
+    UPROPERTY(EditAnywhere)
+        TSubclassOf<class UUserWidget> InGameWidgetClass;
 
-	UFUNCTION()
-	void UpdateHealth(float HealthPercentage);
+    // 캐릭터의 체력을 업데이트하는 함수
+    // @param HealthPercentage 캐릭터의 현재 체력을 백분율로 나타낸 값
+    UFUNCTION()
+        void UpdateHealth(float HealthPercentage);
 
-	UFUNCTION()
-	void UpdateAmmo(int32 AmmoInMagazine, int32 TotalAmmo);
+    // 캐릭터의 탄약 정보를 업데이트하는 함수
+    // @param AmmoInMagazine 현재 탄창에 남은 탄약 수
+    // @param TotalAmmo 전체 남은 탄약 수
+    UFUNCTION()
+        void UpdateAmmo(int32 AmmoInMagazine, int32 TotalAmmo);
 
-	UFUNCTION()
-	void SetRespawnText();
+    // 리스폰 텍스트를 화면에 표시하는 함수
+    UFUNCTION()
+        void SetRespawnText();
 
-	UFUNCTION()
-	void DeleteRespawnText();
+    // 화면에서 리스폰 텍스트를 제거하는 함수
+    UFUNCTION()
+        void DeleteRespawnText();
 
 protected:
 
-	virtual void BeginPlay() override;
+    // HUD가 처음 생성될 때 호출되는 함수
+    virtual void BeginPlay() override;
 
 private:
 
-	UPROPERTY()
-	class UInGameWidget* InGameWidget;
-	
+    // InGameWidget 인스턴스에 대한 포인터
+    UPROPERTY()
+        class UInGameWidget* InGameWidget;
 };

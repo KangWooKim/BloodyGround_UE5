@@ -8,39 +8,49 @@
 #include "MachineGun.generated.h"
 
 /**
- * 
+ * AMachineGun 클래스는 ABaseWeapon을 상속받아 기관총의 기능을 구현합니다.
  */
 UCLASS()
 class BLOODYGROUND_API AMachineGun : public ABaseWeapon
 {
-	GENERATED_BODY()
-	
+    GENERATED_BODY()
+
 public:
 
-	AMachineGun();
+    // 생성자: 기관총의 기본 속성을 초기화합니다.
+    AMachineGun();
 
-	UFUNCTION()
-	virtual void Fire() override;
+    // 무기를 발사하는 함수
+    UFUNCTION()
+        virtual void Fire() override;
 
-	virtual EWeaponType GetCurrentWeaponType() override;
+    // 현재 무기 타입을 반환하는 함수
+    virtual EWeaponType GetCurrentWeaponType() override;
 
-	virtual void PerformReload() override;
+    // 탄창을 재장전하는 함수
+    virtual void PerformReload() override;
 
-	virtual void ChangeWeapon() override;
+    // 무기를 교체하는 함수
+    virtual void ChangeWeapon() override;
 
 protected:
 
-	UFUNCTION()
-	virtual bool CanFire() override;
+    // 발사가 가능한지 확인하는 함수
+    UFUNCTION()
+        virtual bool CanFire() override;
 
-	virtual void FireEnd() override;
+    // 발사 종료 함수
+    virtual void FireEnd() override;
 
-	UFUNCTION(BluePrintCallable)
-	void ShootEnd();
+    // 발사 주기가 종료될 때 호출되는 함수
+    UFUNCTION(BlueprintCallable)
+        void ShootEnd();
 
 private:
 
-	FTimerHandle FireTimerHandle; // 연속 발사를 위한 타이머 핸들
-	float FireRate;               // 발사 간격
+    // 연속 발사를 위한 타이머 핸들
+    FTimerHandle FireTimerHandle;
 
+    // 발사 간격
+    float FireRate;
 };

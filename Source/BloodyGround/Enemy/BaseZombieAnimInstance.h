@@ -17,8 +17,8 @@ public:
 protected:
     // 좀비의 이동 속도
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Movement")
-        float MovementSpeed;
+        float MovementSpeed; // 좀비의 이동 속도
 
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Movement")
-     EZombieState ZombieState;
+     EZombieState ZombieState; // 좀비의 행동 상태
 };

@@ -23,7 +23,7 @@ public:
 protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Movement")
-	EZombieInjuryState ZombieInjuryState;
+	EZombieInjuryState ZombieInjuryState; // 좀비의 부상상태를 업데이트
 
 private:
 

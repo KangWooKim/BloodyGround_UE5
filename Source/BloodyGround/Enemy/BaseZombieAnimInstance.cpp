@@ -9,8 +9,8 @@ void UBaseZombieAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
     ABaseZombie* Zombie = Cast<ABaseZombie>(TryGetPawnOwner());
     if (Zombie)
     {
-        MovementSpeed = Zombie->GetVelocity().Size();
+        MovementSpeed = Zombie->GetVelocity().Size(); // 좀비의 그라운드 스피드
 
-        ZombieState = Zombie->GetZombieState();
+        ZombieState = Zombie->GetZombieState(); // 좀비의 현재 행동 상태
     }
 }

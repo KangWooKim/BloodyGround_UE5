@@ -8,24 +8,22 @@
 #include "WeaponAnimInstance.generated.h"
 
 /**
- * 
+ *
  */
 UCLASS()
 class BLOODYGROUND_API UWeaponAnimInstance : public UAnimInstance
 {
-	GENERATED_BODY()
-	
+    GENERATED_BODY()
+
 public:
 
-	// 애니메이션 업데이트 시 호출되는 함수
-	virtual void NativeUpdateAnimation(float DeltaSeconds) override;
+    // 애니메이션 업데이트 시 호출되는 함수
+    // @param DeltaSeconds 마지막 틱 이후 경과된 시간
+    virtual void NativeUpdateAnimation(float DeltaSeconds) override;
 
 protected:
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "WeaponState")
-	EWeaponState WeaponState;
-
-private:
-
-
+    // 현재 무기 상태를 나타내는 변수
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "WeaponState")
+        EWeaponState WeaponState;
 };

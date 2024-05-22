@@ -7,129 +7,187 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "BaseCharacter.generated.h"
 
+// 캐릭터 상태를 정의하는 열거형
 UENUM(BlueprintType)
 enum class ECharacterState : uint8
 {
-	None    UMETA(DisplayName = "None"),
-	Attacking  UMETA(DisplayName = "Attacking"),
-	HitReact  UMETA(DisplayName = "HitReact"),
-	Death  UMETA(DisplayName = "Death"),
-	MAX UMETA(DisplayName = "MAX")
+    None    UMETA(DisplayName = "None"),
+    Attacking  UMETA(DisplayName = "Attacking"),
+    HitReact  UMETA(DisplayName = "HitReact"),
+    Death  UMETA(DisplayName = "Death"),
+    MAX UMETA(DisplayName = "MAX")
 };
 
-
+// ABaseCharacter 클래스는 캐릭터의 기본 동작을 정의합니다.
 UCLASS()
 class BLOODYGROUND_API ABaseCharacter : public ACharacter
 {
-	GENERATED_BODY()
+    GENERATED_BODY()
 
 public:
-	ABaseCharacter();
+    // 생성자: 기본 설정을 초기화합니다.
+    ABaseCharacter();
 
-	FORCEINLINE float GetHealth() { return Health; }
-	
+    // 캐릭터의 체력을 반환하는 함수
+    FORCEINLINE float GetHealth() { return Health; }
+
 protected:
+    // 게임이 시작될 때 호출되는 함수
+    virtual void BeginPlay() override;
 
-	virtual void BeginPlay() override;
-	virtual void GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& OutLifetimeProps) const override;
+    // 네트워크 복제를 설정하는 함수
+    virtual void GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& OutLifetimeProps) const override;
 
-	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
-	void HandleDeath();
+    // 데미지를 처리하는 함수
+    // @param DamageAmount 데미지 양
+    // @param DamageEvent 데미지 이벤트
+    // @param EventInstigator 데미지를 입힌 컨트롤러
+    // @param DamageCauser 데미지를 입힌 액터
+    virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
 
-	UFUNCTION(Server, Reliable, BlueprintCallable)
-	void ServerFootStep();
+    // 캐릭터가 사망했을 때 처리하는 함수
+    void HandleDeath();
+
+    // 서버에서 발소리를 처리하는 함수
+    UFUNCTION(Server, Reliable, BlueprintCallable)
+        void ServerFootStep();
 
 public:
-	virtual void Tick(float DeltaTime) override;
-	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+    // 매 프레임마다 호출되는 함수
+    virtual void Tick(float DeltaTime) override;
 
-	virtual void StartAiming();
-	virtual void StopAiming();
+    // 플레이어 입력을 설정하는 함수
+    virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
-	FORCEINLINE class AInGameHUD* GetInGameHUD() { return PlayerHUD; }
+    // 조준을 시작하는 함수
+    virtual void StartAiming();
 
-	UPROPERTY(Replicated, BlueprintReadOnly, Category = "Health")
-	float Health;
+    // 조준을 중지하는 함수
+    virtual void StopAiming();
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
-	UBattleComponent* BattleComp;
+    // 인게임 HUD를 반환하는 함수
+    FORCEINLINE class AInGameHUD* GetInGameHUD() { return PlayerHUD; }
 
-	FORCEINLINE	ECharacterState GetCharacterState() { return CharacterState; }
+    // 캐릭터의 체력 변수
+    UPROPERTY(Replicated, BlueprintReadOnly, Category = "Health")
+        float Health;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
-	class UInventoryComponent* InventoryComp; // 인벤토리 컴포넌트 추가
+    // 전투 컴포넌트
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+        UBattleComponent* BattleComp;
 
-	UFUNCTION(Server, Reliable)
-	void ServerStopAttack();
+    // 캐릭터 상태를 반환하는 함수
+    FORCEINLINE ECharacterState GetCharacterState() { return CharacterState; }
 
-	UFUNCTION(NetMulticast, Reliable)
-	void MulticastStopAttack();
+    // 인벤토리 컴포넌트
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+        class UInventoryComponent* InventoryComp;
 
-	UFUNCTION()
-	void Reload();
-	// 무기 변경 함수
-	UFUNCTION(Server, Reliable, WithValidation)
-	void ServerChangeWeapon();
+    // 서버에서 공격을 중지하는 함수
+    UFUNCTION(Server, Reliable)
+        void ServerStopAttack();
 
-	UFUNCTION()
-	void HandleAimingRotation();
+    // 멀티캐스트로 공격을 중지하는 함수
+    UFUNCTION(NetMulticast, Reliable)
+        void MulticastStopAttack();
 
-	UFUNCTION(BlueprintCallable)
-	void HitReactionEnd();
+    // 재장전을 처리하는 함수
+    UFUNCTION()
+        void Reload();
 
+    // 서버에서 무기를 변경하는 함수
+    UFUNCTION(Server, Reliable, WithValidation)
+        void ServerChangeWeapon();
 
-	
+    // 조준 시 회전을 처리하는 함수
+    UFUNCTION()
+        void HandleAimingRotation();
 
-	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
-	TSubclassOf<class APistol> PistolBlueprint;
+    // 피격 반응이 끝났을 때 호출되는 함수
+    UFUNCTION(BlueprintCallable)
+        void HitReactionEnd();
 
-	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
-	TSubclassOf<class AMachineGun> MachineGunBlueprint;
+    // 권총 블루프린트 클래스
+    UPROPERTY(EditDefaultsOnly, Category = "Weapon")
+        TSubclassOf<class APistol> PistolBlueprint;
 
-	UPROPERTY(visibleAnywhere, BlueprintReadOnly, Category = Noise)
-	class UPawnNoiseEmitterComponent* NoiseEmitter;
+    // 머신건 블루프린트 클래스
+    UPROPERTY(EditDefaultsOnly, Category = "Weapon")
+        TSubclassOf<class AMachineGun> MachineGunBlueprint;
 
-	UFUNCTION(BlueprintCallable)
-	void Respawn();
+    // 소음 발생 컴포넌트
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Noise)
+        class UPawnNoiseEmitterComponent* NoiseEmitter;
+
+    // 리스폰을 처리하는 함수
+    UFUNCTION(BlueprintCallable)
+        void Respawn();
 
 private:
-	void MoveForward(float Value);
-	void MoveRight(float Value);
-	void Turn(float Value);
-	void LookUp(float Value);
-	virtual void Jump() override;
+    // 전/후 이동을 처리하는 함수
+    void MoveForward(float Value);
 
-	void AttackButtonPressed();
-	void AttackButtonReleased();
-	void AimButtonPressed();
-	void AimButtonReleased();
+    // 좌/우 이동을 처리하는 함수
+    void MoveRight(float Value);
 
-	// 조준 관련 변수들
-	float DefaultFOV;  // 기본 FOV 값
-	float AimedFOV;    // 조준 시 FOV 값
-	float FOVInterpSpeed; // FOV 변경 속도
+    // 좌우 회전을 처리하는 함수
+    void Turn(float Value);
 
-	void InterpFOV(float DeltaTime);
+    // 상하 회전을 처리하는 함수
+    void LookUp(float Value);
 
-	// 카메라와 카메라 붐 컴포넌트 추가
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
-	USpringArmComponent* CameraBoom;
+    // 점프를 처리하는 함수
+    virtual void Jump() override;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
-	UCameraComponent* FollowCamera;
+    // 공격 버튼을 눌렀을 때 호출되는 함수
+    void AttackButtonPressed();
 
-	UFUNCTION()
-	void ChangeWeapon();
+    // 공격 버튼을 뗐을 때 호출되는 함수
+    void AttackButtonReleased();
 
-	UPROPERTY(Replicated)
-	ECharacterState CharacterState;
+    // 조준 버튼을 눌렀을 때 호출되는 함수
+    void AimButtonPressed();
 
-	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess = "true"))
-	float FootstepLoudness = 0.2f;
+    // 조준 버튼을 뗐을 때 호출되는 함수
+    void AimButtonReleased();
 
-	UPROPERTY()
-	class APlayerController* PlayerController;
+    // FOV 보간을 처리하는 함수
+    void InterpFOV(float DeltaTime);
 
-	UPROPERTY()
-	class AInGameHUD* PlayerHUD;
+    // 카메라 붐 컴포넌트
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
+        USpringArmComponent* CameraBoom;
+
+    // 팔로우 카메라 컴포넌트
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
+        UCameraComponent* FollowCamera;
+
+    // 무기를 변경하는 함수
+    UFUNCTION()
+        void ChangeWeapon();
+
+    // 캐릭터 상태 변수
+    UPROPERTY(Replicated)
+        ECharacterState CharacterState;
+
+    // 발소리 크기 변수
+    UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess = "true"))
+        float FootstepLoudness = 0.2f;
+
+    // 플레이어 컨트롤러 변수
+    UPROPERTY()
+        class APlayerController* PlayerController;
+
+    // 인게임 HUD 변수
+    UPROPERTY()
+        class AInGameHUD* PlayerHUD;
+
+    // 기본 FOV 값
+    float DefaultFOV;
+
+    // 조준 시 FOV 값
+    float AimedFOV;
+
+    // FOV 변경 속도
+    float FOVInterpSpeed;
 };

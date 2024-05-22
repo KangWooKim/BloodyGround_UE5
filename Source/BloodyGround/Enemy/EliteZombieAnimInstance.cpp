@@ -12,6 +12,6 @@ void UEliteZombieAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
     AEliteZombie* Zombie = Cast<AEliteZombie>(TryGetPawnOwner());
     if (Zombie)
     {
-        ZombieInjuryState = Zombie->GetZombieInjuryState();
+        ZombieInjuryState = Zombie->GetZombieInjuryState(); // 좀비의 부상 상태를 업데이트
     }
 }
