@@ -122,6 +122,10 @@ public:
     UFUNCTION(BlueprintCallable)
         void Respawn();
 
+    // 플레이어 컨트롤러 변수
+    UPROPERTY()
+        class APlayerController* PlayerController;
+
 private:
     // 전/후 이동을 처리하는 함수
     void MoveForward(float Value);
@@ -173,9 +177,7 @@ private:
     UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess = "true"))
         float FootstepLoudness = 0.2f;
 
-    // 플레이어 컨트롤러 변수
-    UPROPERTY()
-        class APlayerController* PlayerController;
+    
 
     // 인게임 HUD 변수
     UPROPERTY()

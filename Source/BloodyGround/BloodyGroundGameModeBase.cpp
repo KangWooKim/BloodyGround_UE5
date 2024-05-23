@@ -4,6 +4,8 @@
 #include "Kismet/GameplayStatics.h"
 #include "GameFramework/PlayerStart.h"
 #include "BloodyGround/Character/BaseCharacter.h"
+#include "BloodyGround/HUD/InGameHUD.h"
+#include "BloodyGround/HUD/InGameWidget.h"
 
 // 생성자: 게임 모드의 기본 설정을 초기화합니다.
 ABloodyGroundGameModeBase::ABloodyGroundGameModeBase()
@@ -64,5 +66,14 @@ void ABloodyGroundGameModeBase::RespawnPlayer(APlayerController* PC)
     if (NewCharacter)
     {
         PC->Possess(NewCharacter);
+        NewCharacter->PlayerController = PC;
+       
+        AInGameHUD* PlayerHUD = Cast<AInGameHUD>(PC->GetHUD());
+        if (PlayerHUD)
+        {
+            PlayerHUD->UpdateHealth(1.f); // HUD에 초기 체력 업데이트
+            PlayerHUD->DeleteRespawnText(); // Respawn 텍스트 삭제
+            PlayerHUD->UpdateAmmo(10, 50);
+        }
     }
 }

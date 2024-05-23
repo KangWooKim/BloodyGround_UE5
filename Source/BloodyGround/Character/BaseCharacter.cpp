@@ -56,26 +56,23 @@ void ABaseCharacter::BeginPlay()
     Tags.AddUnique(FName("Player")); // 플레이어 태그 추가
     CharacterState = ECharacterState::None; // 캐릭터 상태 초기화
 
-    PlayerController = Cast<APlayerController>(GetController());
+    PlayerController = PlayerController == nullptr ? Cast<APlayerController>(GetController()) : PlayerController;
 
     if (PlayerController)
     {
         PlayerHUD = Cast<AInGameHUD>(PlayerController->GetHUD());
-        UE_LOG(LogTemp, Warning, TEXT("1"));
     }
 
     if (PlayerHUD)
     {
         PlayerHUD->UpdateHealth(1.f); // HUD에 초기 체력 업데이트
         PlayerHUD->DeleteRespawnText(); // Respawn 텍스트 삭제
-        UE_LOG(LogTemp, Warning, TEXT("2"));
     }
 
     // 기본 무기 및 탄알 설정
     if (HasAuthority())
     {
         InitializeWeaponsAndAmmo();
-        UE_LOG(LogTemp, Warning, TEXT("3"));
     }
 
     // 카메라 기본 FOV 설정
