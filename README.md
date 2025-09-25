@@ -458,12 +458,8 @@ void UMultiplayerSessionsSubsystem::CreateSession(int32 NumPublicConnections, FS
 
 ---
 
-## 8. 온보딩 팁
-- **폴더별 README**: `Source/BloodyGround/**/ReadMe.md` 파일에는 각 클래스의 역할과 공개 메서드가 요약되어 있습니다.
-=======
-BloodyGround는 언리얼 엔진 5로 구현된 3인칭 슈팅 멀티플레이 게임 프로젝트입니다. "빠른 전투 감각"과 "신뢰할 수 있는 네트워크 동기화"를 목표로, 캐릭터 조작·전투·AI·세션 관리 전반을 모듈화된 컴포넌트 구조로 구성했습니다.
 
-## 아키텍처 하이라이트
+## 아키텍처
 
 ### 1. 캐릭터 & 플레이 루프
 - **ABloodyGroundGameModeBase**가 기본 폰을 `ABaseCharacter`로 지정하고 서버에서 무작위 PlayerStart에 리스폰시키는 구조입니다.
