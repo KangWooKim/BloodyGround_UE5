@@ -1,18 +1,87 @@
-# BloodyGround (UE5 Third-Person Shooter)
+# 🎮 BloodyGround (UE5 Third-Person Shooter)
 
+BloodyGround는 언리얼 엔진 5로 만든 3인칭 멀티플레이 슈팅 프로젝트입니다. **"빠른 조준 감각"**과 **"신뢰할 수 있는 동기화"**를 목표로 캐릭터, 전투, AI, 세션 플로우를 컴포넌트화했습니다.
 
-BloodyGround는 언리얼 엔진 5로 만든 3인칭 멀티플레이 슈팅 프로젝트입니다. "빠른 조준 감각"과 "신뢰할 수 있는 동기화"를 목표로 캐릭터, 전투, AI, 세션 플로우를 컴포넌트화했습니다.
-
-## 한눈에 보기
-- **엔진 & 타겟:** Unreal Engine 5 · 멀티플레이 TPS 프로토타입
-- **핵심:** 기능은 컴포넌트/서브시스템으로 분리, 네트워크 판정은 항상 서버 권위 기반, HUD는 상태와 즉시 동기화
-- **빠르게 확인:** 아래 각 섹션은 실제 소스 경로와 대응되는 스니펫을 포함하므로 파일을 열지 않아도 설계 의도를 파악할 수 있습니다.
+## 📑 목차
+- [한눈에 보기](#-한눈에-보기)
+- [프로젝트 구조](#-프로젝트-구조)
+- [핵심 시스템](#-핵심-시스템)
+  - [1. 캐릭터 입력 루프](#1️⃣-캐릭터-입력-루프)
+  - [2. 전투 & 인벤토리 복제](#2️⃣-전투--인벤토리-복제)
+  - [3. 무기 & 서버 판정](#3️⃣-무기--서버-판정)
+  - [4. AI 상태 머신](#4️⃣-ai-상태-머신)
+  - [5. 월드 상태 & 세션 흐름](#5️⃣-월드-상태--세션-흐름)
+  - [6. HUD & 위젯 연동](#6️⃣-hud--위젯-연동)
+  - [7. 세션 UI & 온라인 서브시스템](#7️⃣-세션-ui--온라인-서브시스템)
+- [아키텍처](#-아키텍처)
 
 ---
 
-## 1. 캐릭터 입력 루프
+## ⚡ 한눈에 보기
+
+| 항목 | 내용 |
+|------|------|
+| **엔진 & 타겟** | Unreal Engine 5 · 멀티플레이 TPS 프로토타입 |
+| **핵심 원칙** | 기능은 컴포넌트/서브시스템으로 분리, 네트워크 판정은 항상 서버 권위 기반, HUD는 상태와 즉시 동기화 |
+| **특징** | 아래 각 섹션은 실제 소스 경로와 대응되는 스니펫을 포함하므로 파일을 열지 않아도 설계 의도를 파악할 수 있습니다 |
+
+---
+
+## 📁 프로젝트 구조
+
+```
+BloodyGround/
+├── Source/
+│   ├── BloodyGround/
+│   │   ├── Character/           # 플레이어 캐릭터 클래스
+│   │   │   ├── BaseCharacter.h/cpp
+│   │   │   └── AnimInstance 관련 파일들
+│   │   ├── Component/           # 재사용 가능한 컴포넌트들
+│   │   │   ├── BattleComponent.h/cpp
+│   │   │   ├── InventoryComponent.h/cpp
+│   │   │   └── ServerLocationComponent.h/cpp
+│   │   ├── Weapon/              # 무기 시스템
+│   │   │   ├── BaseWeapon.h/cpp
+│   │   │   ├── MachineGun.h/cpp
+│   │   │   └── Pistol.h/cpp
+│   │   ├── Enemy/               # AI 적 캐릭터
+│   │   │   ├── BaseZombie.h/cpp
+│   │   │   └── EliteZombie.h/cpp
+│   │   ├── GameState/           # 게임 상태 관리
+│   │   │   └── BloodyGroundGameState.h/cpp
+│   │   ├── PlayerController/   # 플레이어 컨트롤러
+│   │   │   └── BloodyGroundPlayerController.h/cpp
+│   │   ├── HUD/                 # UI 시스템
+│   │   │   ├── InGameHUD.h/cpp
+│   │   │   └── InGameWidget.h/cpp
+│   │   └── BloodyGroundGameModeBase.h/cpp
+│   └── MultiplayerSessions/    # 멀티플레이어 세션 관리
+│       ├── Public/
+│       │   ├── Menu.h
+│       │   └── MultiplayerSessionsSubsystem.h
+│       └── Private/
+│           ├── Menu.cpp
+│           └── MultiplayerSessionsSubsystem.cpp
+├── Content/                     # 언리얼 에셋 (블루프린트, 머티리얼, 메시 등)
+│   ├── Blueprints/
+│   ├── Maps/
+│   ├── Materials/
+│   └── UI/
+└── Config/                      # 프로젝트 설정 파일
+    ├── DefaultEngine.ini
+    ├── DefaultGame.ini
+    └── DefaultInput.ini
+```
+
+---
+
+## 🎯 핵심 시스템
+
+### 1️⃣ 캐릭터 입력 루프
+
 `ABaseCharacter`는 이동·조준·무기 관리 같은 입력을 책임지고, 나머지는 컴포넌트에게 위임합니다. 생성자에서 어떤 컴포넌트가 묶여 있는지 바로 확인할 수 있습니다.
 
+#### 🔧 캐릭터 초기화
 ```cpp
 // Source/BloodyGround/Character/BaseCharacter.cpp
 ABaseCharacter::ABaseCharacter()
@@ -30,6 +99,7 @@ ABaseCharacter::ABaseCharacter()
 }
 ```
 
+#### 🔄 리스폰 시스템
 - **리스폰 절차:** `ABloodyGroundGameModeBase::RespawnPlayer`가 서버에서 PlayerStart를 고르고 새 캐릭터를 소환합니다.
 - **HUD 초기화:** `BeginPlay`에 HUD 포인터를 확보하고 체력·탄약 UI를 동기화합니다.
 
@@ -63,9 +133,11 @@ void ABloodyGroundGameModeBase::RespawnPlayer(APlayerController* PC)
 
 ---
 
-## 2. 전투 & 인벤토리 복제
-전투 상태는 `UBattleComponent`, 무기 목록과 탄약은 `UInventoryComponent`가 관리합니다. 두 컴포넌트 모두 Replicate 설정이 기본값이라 네트워크 동기화를 직접 확인할 수 있습니다.
+### 2️⃣ 전투 & 인벤토리 복제
 
+전투 상태는 `UBattleComponent`, 무기 목록과 탄약은 `UInventoryComponent`가 관리합니다. 두 컴포넌트 모두 **Replicate 설정이 기본값**이라 네트워크 동기화를 직접 확인할 수 있습니다.
+
+#### ⚔️ 전투 컴포넌트
 ```cpp
 // Source/BloodyGround/Component/BattleComponent.cpp
 UBattleComponent::UBattleComponent()
@@ -82,6 +154,7 @@ void UBattleComponent::GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& O
 }
 ```
 
+#### 🎒 인벤토리 컴포넌트
 ```cpp
 // Source/BloodyGround/Component/InventoryComponent.cpp
 UInventoryComponent::UInventoryComponent()
@@ -119,9 +192,11 @@ void UInventoryComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& 
 
 ---
 
-## 3. 무기 & 서버 판정
-`ABaseWeapon`은 발사 요청을 서버 권위로 수렴시키고, `UServerLocationComponent`가 저장한 위치 히스토리를 통해 히트 판정을 재검증합니다.
+### 3️⃣ 무기 & 서버 판정
 
+`ABaseWeapon`은 발사 요청을 **서버 권위로 수렴**시키고, `UServerLocationComponent`가 저장한 위치 히스토리를 통해 히트 판정을 재검증합니다.
+
+#### 🔫 무기 발사 로직
 ```cpp
 // Source/BloodyGround/Weapon/BaseWeapon.cpp
 void ABaseWeapon::Fire()
@@ -164,6 +239,7 @@ void ABaseWeapon::Fire()
 }
 ```
 
+#### 📍 서버 위치 추적
 ```cpp
 // Source/BloodyGround/Component/ServerLocationComponent.cpp
 void UServerLocationComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
@@ -191,9 +267,11 @@ void UServerLocationComponent::RecordLocation()
 
 ---
 
-## 4. AI 상태 머신
-좀비 AI는 `ABaseZombie`가 순찰/추적/공격/수면 상태를 복제하고, 엘리트 좀비는 추가적으로 다리 부상 루프를 제공합니다.
+### 4️⃣ AI 상태 머신
 
+좀비 AI는 `ABaseZombie`가 **순찰/추적/공격/수면** 상태를 복제하고, 엘리트 좀비는 추가적으로 **다리 부상 루프**를 제공합니다.
+
+#### 🧟 기본 좀비 AI
 ```cpp
 // Source/BloodyGround/Enemy/BaseZombie.cpp
 ABaseZombie::ABaseZombie()
@@ -264,6 +342,7 @@ void ABaseZombie::Tick(float DeltaTime)
 }
 ```
 
+#### 💀 엘리트 좀비 추가 기능
 ```cpp
 // Source/BloodyGround/Enemy/EliteZombie.cpp
 float AEliteZombie::TakeDamage(float DamageAmount, const FDamageEvent& DamageEvent,
@@ -294,9 +373,11 @@ float AEliteZombie::TakeDamage(float DamageAmount, const FDamageEvent& DamageEve
 
 ---
 
-## 5. 월드 상태 & 세션 흐름
-낮/밤 전환과 RTT 모니터링은 게임 상태와 플레이어 컨트롤러에서 주기적으로 처리합니다.
+### 5️⃣ 월드 상태 & 세션 흐름
 
+**낮/밤 전환**과 **RTT 모니터링**은 게임 상태와 플레이어 컨트롤러에서 주기적으로 처리합니다.
+
+#### 🌞 낮/밤 사이클
 ```cpp
 // Source/BloodyGround/GameState/BloodyGroundGameState.cpp
 void ABloodyGroundGameState::BeginPlay()
@@ -332,6 +413,7 @@ void ABloodyGroundGameState::AdjustSunlight(bool bIsDay)
 }
 ```
 
+#### 📡 네트워크 RTT 모니터링
 ```cpp
 // Source/BloodyGround/PlayerController/BloodyGroundPlayerController.cpp
 void ABloodyGroundPlayerController::PlayerTick(float DeltaTime)
@@ -348,9 +430,11 @@ void ABloodyGroundPlayerController::PlayerTick(float DeltaTime)
 
 ---
 
-## 6. HUD & 위젯 연동
+### 6️⃣ HUD & 위젯 연동
+
 HUD는 전적으로 `UInGameWidget`에 위임합니다. 아래 스니펫은 UI와 연동되는 함수가 어떻게 연결되는지 보여줍니다.
 
+#### 🖼️ HUD 초기화
 ```cpp
 // Source/BloodyGround/HUD/InGameHUD.cpp
 void AInGameHUD::BeginPlay()
@@ -380,6 +464,7 @@ void AInGameHUD::UpdateHealth(float HealthPercentage)
 }
 ```
 
+#### 📊 위젯 업데이트
 ```cpp
 // Source/BloodyGround/HUD/InGameWidget.cpp
 void UInGameWidget::UpdateAmmoCount(int32 AmmoInMagazine, int32 TotalAmmo)
@@ -394,9 +479,11 @@ void UInGameWidget::UpdateAmmoCount(int32 AmmoInMagazine, int32 TotalAmmo)
 
 ---
 
-## 7. 세션 UI & 온라인 서브시스템
-플레이어는 `UMenu` 위젯을 통해 세션을 만들거나 검색하고, `UMultiplayerSessionsSubsystem`이 언리얼 온라인 서브시스템과 직접 통신합니다.
+### 7️⃣ 세션 UI & 온라인 서브시스템
 
+플레이어는 `UMenu` 위젯을 통해 세션을 만들거나 검색하고, `UMultiplayerSessionsSubsystem`이 **언리얼 온라인 서브시스템과 직접 통신**합니다.
+
+#### 🎮 메뉴 UI 바인딩
 ```cpp
 // MultiplayerSessions/Private/Menu.cpp
 void UMenu::NativeConstruct()
@@ -416,6 +503,7 @@ void UMenu::NativeConstruct()
 }
 ```
 
+#### 🌐 세션 서브시스템
 ```cpp
 // MultiplayerSessions/Private/MultiplayerSessionsSubsystem.cpp
 UMultiplayerSessionsSubsystem::UMultiplayerSessionsSubsystem()
@@ -458,33 +546,32 @@ void UMultiplayerSessionsSubsystem::CreateSession(int32 NumPublicConnections, FS
 
 ---
 
+## 🏗️ 아키텍처
 
-## 아키텍처
-
-### 1. 캐릭터 & 플레이 루프
+### 1. 🎯 캐릭터 & 플레이 루프
 - **ABloodyGroundGameModeBase**가 기본 폰을 `ABaseCharacter`로 지정하고 서버에서 무작위 PlayerStart에 리스폰시키는 구조입니다.
 - **ABaseCharacter**는 이동, 조준, 공격, 무기 전환 등 TPS 핵심 입력을 처리하고 체력/카메라/인벤토리/소음 컴포넌트를 초기화합니다.
 - 애니메이션 인스턴스는 속도·공중 여부·조준 상태·무기 정보를 기반으로 블렌드 파라미터를 갱신해 모션 일관성을 유지합니다.
 - **AInGameHUD**와 `UInGameWidget`은 체력, 탄약, 리스폰 메시지를 실시간으로 표시하여 HUD와 캐릭터 상태를 긴밀히 연결합니다.
 
-### 2. 전투 & 인벤토리 시스템
+### 2. ⚔️ 전투 & 인벤토리 시스템
 - **UBattleComponent**는 조준 상태와 발사 관련 변수를 복제(replication)해 클라이언트 간 전투 동작을 일치시킵니다.
 - **UInventoryComponent**는 보유 무기 목록과 탄약 풀을 관리하고, 교체·파괴·탄약 동기화를 담당합니다.
 - **ABaseWeapon**이 네트워크 발사, 히트 판정, 재장전, 소음 전파 로직의 기본 틀을 제공하며 `AMachineGun`, `APistol` 등이 탄약량·데미지·연사 패턴을 구체화합니다.
 - **UServerLocationComponent**는 서버에서 캐릭터 위치를 추적해 히트 검증을 재확인하는 방식으로 언리얼의 리와인드(Replay) 기반 판정을 구현합니다.
 
-### 3. AI & 월드 상호작용
+### 3. 🤖 AI & 월드 상호작용
 - **ABaseZombie**는 시야/청각 감지 컴포넌트를 사용해 순찰과 추적을 전환하고, 공격·피해·사망 상태를 세분화합니다.
 - **AEliteZombie**는 추가적으로 다리 피격 누적 → 넘어짐 → 기상 → 강화 공격의 상태 전이를 관리합니다.
 - **AKeyItem**은 서버에서만 소유권을 판정하고, 획득 시 모든 클라이언트에 사운드/비주얼 업데이트를 복제하여 아이템 획득 경험을 동기화합니다.
 
-### 4. 월드 상태 & 세션 플로우
+### 4. 🌍 월드 상태 & 세션 플로우
 - **ABloodyGroundGameState**는 낮/밤 주기를 주기적으로 토글하며, 태양광 세기를 Lerp로 보간해 부드러운 조명 변화를 제공합니다.
 - **ABloodyGroundPlayerController**는 RTT(핑)를 주기적으로 측정해 네트워크 지연 정보를 UI나 로깅에 활용할 수 있게 합니다.
 - **UMenu** 위젯은 세션 생성/검색 UI를 담당하고, 버튼 바인딩과 메뉴 전환, 맵 선택 로직을 포함합니다.
 - **UMultiplayerSessionsSubsystem**은 Online Subsystem과 연동하여 세션 생성·검색·참가·시작·파괴 콜백을 통합 관리합니다.
 
-### 5. 개발 편의 & 확장성
+### 5. 🛠️ 개발 편의 & 확장성
 - 주요 폴더별 ReadMe를 통해 클래스 역할과 공개 메서드를 문서화하여 구조를 빠르게 파악하도록 돕습니다.
 - 전투, 인벤토리, AI, UI 등 핵심 기능을 컴포넌트/서브시스템으로 분리해 테스트와 확장이 용이합니다.
 - 네트워크 관련 변수는 RepNotify와 서버 권위(Server Authority) 패턴을 중심으로 구현되어, 멀티플레이 환경에서의 일관성이 확보됩니다.
